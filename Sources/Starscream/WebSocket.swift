@@ -29,6 +29,12 @@ public enum ErrorType: Error {
     case serverError
 }
 
+public enum TransportType {
+    case native
+    case tcp
+    case foundation
+}
+
 public struct WSError: Error {
     public let type: ErrorType
     public let message: String
@@ -43,7 +49,7 @@ public struct WSError: Error {
 
 public protocol WebSocketClient: class {
     func connect()
-    func disconnect(closeCode: UInt16)
+    func disconnect(closeCode: CloseCode)
     func write(string: String, completion: (() -> ())?)
     func write(stringData: Data, completion: (() -> ())?)
     func write(data: Data, completion: (() -> ())?)
@@ -70,7 +76,7 @@ extension WebSocketClient {
     }
     
     public func disconnect() {
-        disconnect(closeCode: CloseCode.normal.rawValue)
+        disconnect(closeCode: .normal)
     }
 }
 
@@ -120,6 +126,27 @@ open class WebSocket: WebSocketClient, EngineDelegate {
         self.engine = engine
     }
     
+    public convenience init(request: URLRequest, preferredTransport: TransportType) {
+        var engine: Engine = WSEngine(transport: FoundationTransport(), certPinner: FoundationSecurity())
+        
+        switch preferredTransport {
+        case .native:
+            if #available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *) {
+                engine = NativeEngine()
+            }
+            
+        case .tcp:
+            if #available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *) {
+                engine = WSEngine(transport: TCPTransport(), certPinner: FoundationSecurity())
+            }
+            
+        case .foundation:
+            break
+        }
+        
+        self.init(request: request, engine: engine)
+    }
+    
     public convenience init(request: URLRequest,
                             certPinner: CertificatePinning? = FoundationSecurity(),
                             compressionHandler: CompressionHandler? = nil) {
@@ -131,8 +158,8 @@ open class WebSocket: WebSocketClient, EngineDelegate {
         engine.start(request: request)
     }
     
-    public func disconnect(closeCode: UInt16 = CloseCode.normal.rawValue) {
-        engine.stop(closeCode: closeCode)
+    public func disconnect(closeCode: CloseCode = .normal) {
+        engine.stop(closeCode: closeCode.rawValue)
     }
     
     public func forceDisconnect() {
