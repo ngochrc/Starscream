@@ -47,6 +47,11 @@ public class FoundationTransport: NSObject, Transport, StreamDelegate {
         onConnect = streamConfiguration
     }
     
+    deinit {
+        inputStream?.delegate = nil
+        outputStream?.delegate = nil
+    }
+    
      public func connect(url: URL, timeout: Double = 10, certificatePinning: CertificatePinning? = nil) {
         guard let parts = url.getParts() else {
             delegate?.connectionChanged(state: .failed(FoundationTransportError.invalidRequest))

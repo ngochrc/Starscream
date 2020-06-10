@@ -141,7 +141,10 @@ public class TCPTransport: Transport {
             if let data = data {
                 s.delegate?.connectionChanged(state: .receive(data))
             }
-            s.readLoop()
+            
+            if error == nil {
+                s.readLoop()
+            }
         })
     }
 }
