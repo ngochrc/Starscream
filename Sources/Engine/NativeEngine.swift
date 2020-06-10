@@ -69,11 +69,13 @@ public class NativeEngine: NSObject, Engine, URLSessionDataDelegate, URLSessionW
                 @unknown default:
                     break
                 }
-                break
+                
+                self?.doRead()
+                
             case .failure(let error):
                 self?.broadcast(event: .error(error))
             }
-            self?.doRead()
+            
         }
     }
 
