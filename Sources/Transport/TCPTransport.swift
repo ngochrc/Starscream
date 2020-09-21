@@ -150,7 +150,6 @@ public class TCPTransport: Transport {
             if error == nil {
                 s.readLoop()
             }
-
         })
     }
 }
