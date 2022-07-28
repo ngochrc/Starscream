@@ -126,8 +126,11 @@ open class WebSocket: WebSocketClient, EngineDelegate {
         self.engine = engine
     }
     
-    public convenience init(request: URLRequest, preferredTransport: TransportType) {
-        var engine: Engine = WSEngine(transport: FoundationTransport(), certPinner: FoundationSecurity())
+    public convenience init(request: URLRequest,
+                            certPinner: CertificatePinning? = nil,
+                            compressionHandler: CompressionHandler? = nil,
+                            preferredTransport: TransportType) {
+        var engine: Engine?
         
         switch preferredTransport {
         case .native:
@@ -137,20 +140,14 @@ open class WebSocket: WebSocketClient, EngineDelegate {
             
         case .tcp:
             if #available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *) {
-                engine = WSEngine(transport: TCPTransport(), certPinner: FoundationSecurity())
+                engine = WSEngine(transport: TCPTransport(), certPinner: certPinner, compressionHandler: compressionHandler)
             }
             
         case .foundation:
             break
         }
         
-        self.init(request: request, engine: engine)
-    }
-    
-    public convenience init(request: URLRequest,
-                            certPinner: CertificatePinning? = FoundationSecurity(),
-                            compressionHandler: CompressionHandler? = nil) {
-        self.init(request: request, engine: WSEngine(transport: FoundationTransport(), certPinner: certPinner, compressionHandler: compressionHandler))
+        self.init(request: request, engine: engine ?? WSEngine(transport: FoundationTransport(), certPinner: certPinner, compressionHandler: compressionHandler))
     }
     
     public func connect() {
